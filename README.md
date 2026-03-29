@@ -1,5 +1,9 @@
-# This Repo has moved to GitLab since 24th of Oct 2023
-# [rootAVD](https://gitlab.com/newbit/rootAVD)
+# rootAVD (Fork)
+
+> Forked from [newbit/rootAVD](https://gitlab.com/newbit/rootAVD) with the following improvements:
+> - **`MAGISK_CHOICE` env var**: Non-interactive Magisk version selection for CI/scripting
+> - **Android 16 (API 36)** tested and working with Magisk 30.7
+
 ### [newbit @ xda-developers](https://forum.xda-developers.com/m/newbit.1350876)
 A Script to...
 * root your Android Studio Virtual Device (AVD), with Magisk (Stable, Canary or Alpha)
@@ -96,6 +100,12 @@ Extra Arguments:
 
 Extra Arguments can be combined, there is no particular order.
 
+Environment Variables:
+        MAGISK_CHOICE                   Non-interactive Magisk version selection
+                                        - Set to the menu option number (1, 2, 3, etc.)
+                                        - Bypasses the interactive menu with 10s timeout
+                                        - e.g. MAGISK_CHOICE=2 ./rootAVD.sh <ramdisk.img>
+
 Notes: rootAVD will
 - always create .backup files of ramdisk*.img and kernel-ranchu
 - replace both when done patching
@@ -119,6 +129,10 @@ Command Examples:
 ./rootAVD.sh system-images/android-33/google_apis_playstore/x86_64/ramdisk.img InstallPrebuiltKernelModules
 ./rootAVD.sh system-images/android-33/google_apis_playstore/x86_64/ramdisk.img InstallPrebuiltKernelModules GetUSBHPmodZ PATCHFSTAB DEBUG
 ./rootAVD.sh system-images/android-33/google_apis_playstore/x86_64/ramdisk.img AddRCscripts
+
+# Non-interactive: auto-select stable (option 2) or canary (option 3)
+MAGISK_CHOICE=2 ./rootAVD.sh system-images/android-33/google_apis_playstore/x86_64/ramdisk.img
+MAGISK_CHOICE=3 ./rootAVD.sh system-images/android-33/google_apis_playstore/x86_64/ramdisk.img
 ```
 
 <details>
@@ -245,6 +259,12 @@ rootAVD.bat system-images\android-25\google_apis_playstore\armeabi-v7a\ramdisk.i
 
 ### Notes on Magisk Versions
 * Replace the Magisk.zip with the Flavour/Version of your choice
+* If the online menu doesn't show the latest version (e.g. `stable.json` lags behind),
+  manually download the APK and replace `Magisk.zip`:
+  ```
+  curl -L -o Magisk.zip https://github.com/topjohnwu/Magisk/releases/download/v30.7/Magisk-v30.7.apk
+  ```
+  Then run the script with `MAGISK_CHOICE=1` to use the local version.
 * Tested Flavours are:
 	* Magisk from [topjohnwu](https://github.com/topjohnwu/magisk-files)
 	* Magisk Alpha from [vvb2060](https://xdaforums.com/t/discussion-magisk-alpha-public-released-fork-vvb2060.4424845/)

@@ -1070,7 +1070,13 @@ CheckAvailableMagisks() {
 				echo "[?] Choose a Magisk Version to install and make it local"
 				echo "[s] (s)how all available Magisk Versions"
 				cat $MAGISK_MENU
-				read -t 10 choice
+				# Support non-interactive selection via MAGISK_CHOICE env var
+				if [ ! -z "$MAGISK_CHOICE" ]; then
+					choice=$MAGISK_CHOICE
+					echo "[-] Auto-selecting option $choice via MAGISK_CHOICE env var"
+				else
+					read -t 10 choice
+				fi
 				case $choice in
 					*)
 						if [[ "$choice" == "" ]]; then
@@ -1442,6 +1448,7 @@ ExecBusyBoxAsh() {
 	export TMP
 	export BB
 	export MZ
+	export MAGISK_CHOICE
 
 	if [ "$DERIVATE" == "BlueStacks" ]; then
 		CheckBlueStacksSUBinary
