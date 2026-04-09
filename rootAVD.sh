@@ -224,29 +224,34 @@ detect_ramdisk_compression_method() {
 	echo "[!] Ramdisk.img uses $METHOD compression"
 }
 
-runMagisk_to_Patch_fake_boot_img() {
-	am force-stop $PKG_NAME
-	echo "[-] Starting Magisk"
-	monkey -p $PKG_NAME -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1
-	echo "[*] Install/Patch $FBI and hit Enter when done(max. 60s)"
-	read -t 60 proceed
-	case $proceed in
-		*)
-		;;
-	esac
+run_boot_patch_sh() {
+	echo "[*] Auto-patching $FBI via Magisk boot_patch.sh"
+	export KEEPVERITY KEEPFORCEENCRYPT RECOVERYMODE
+	# boot_patch.sh cds to its own directory and calls ./magiskboot, ./magiskinit etc.
+	# Copy the scripts into $BASEDIR where all binaries already live, then run from there.
+	cp $BASEDIR/assets/boot_patch.sh $BASEDIR/boot_patch.sh
+	cp $BASEDIR/assets/util_functions.sh $BASEDIR/util_functions.sh
+	cd $BASEDIR
+	$BB sh $BASEDIR/boot_patch.sh $FBI
+	local RESULT="$?"
+	rm -f $BASEDIR/boot_patch.sh $BASEDIR/util_functions.sh
+	if [[ "$RESULT" != "0" ]]; then
+		echo "[!] boot_patch.sh failed (exit $RESULT)"
+		abort_script
+	fi
+	echo "[!] boot_patch.sh completed -> new-boot.img"
 }
 
-detecting_users() {
-	local userID=""
-	local userZero=0
-	echo "[*] Detecting current user"
-	userID=$(am get-current-user)
-	echo "[-] Current user $userID"
-	if [ "$userID" != "$userZero" ]; then
-		echo "[-] Switching to user $userZero"
-		am switch-user $userZero
-		userID=$(am get-current-user)
-		echo "[-] Current user $userID"
+unpack_new_boot_img() {
+	local NEWBOOTIMG=$BASEDIR/new-boot.img
+	if [ -f "$NEWBOOTIMG" ]; then
+		echo "[*] Unpacking patched $NEWBOOTIMG"
+		$BASEDIR/magiskboot unpack "$NEWBOOTIMG" > /dev/null 2>&1
+		echo "[-] Removing $NEWBOOTIMG"
+		rm -f "$NEWBOOTIMG"
+	else
+		echo "[!] new-boot.img not found after boot_patch.sh!"
+		abort_script
 	fi
 }
 
@@ -339,11 +344,6 @@ create_fake_boot_img() {
 		fi
 	fi
 	echo "[!] $FBI created"
-
-	InstallMagiskTemporarily
-	detecting_users
-	runMagisk_to_Patch_fake_boot_img
-	RemoveTemporarilyMagisk
 }
 
 unpack_patched_ramdisk_from_fake_boot_img() {
@@ -371,14 +371,14 @@ process_fake_boot_img() {
 	SDCARD=/sdcard/Download
 
 	echo "[*] Processing fake Boot.img"
-	MagiskPatchedFiles=$(ls "$SDCARD"/*magisk_patched*) > /dev/null 2>&1
+	MagiskPatchedFiles=$(ls "$SDCARD"/*magisk_patched* 2>/dev/null)
 	if [ "$MagiskPatchedFiles" != "" ]; then
-		echo "[!] external magisk_patched file(s) could be found!"
+		echo "[!] Pre-existing magisk_patched file(s) found - using manual patch"
 		unpack_patched_ramdisk_from_fake_boot_img
 	else
 		create_fake_boot_img
-		MagiskPatchedFiles=$(ls "$SDCARD"/*magisk_patched*) > /dev/null 2>&1
-		unpack_patched_ramdisk_from_fake_boot_img
+		run_boot_patch_sh
+		unpack_new_boot_img
 	fi
 }
 
@@ -1199,7 +1199,7 @@ TestingBusyBoxVersion() {
 	cd $TMP > /dev/null
 		$(ASH_STANDALONE=1 $1 sh -c 'grep' > /dev/null 2>&1)
 		RESULT="$?"
-		if [[ "$RESULT" != "255" ]]; then
+		if [[ "$RESULT" != "0" ]]; then
 			$($1 unzip $MZ -oq > /dev/null 2>&1)
 			RESULT="$?"
 			if [[ "$RESULT" != "0" ]]; then
@@ -1222,7 +1222,7 @@ FindWorkingBusyBox() {
 	for file in $(ls $BASEDIR/lib/*/*busybox*); do
 		chmod +x "$file"
 		bbversion=$($file | $file head -n 1)>/dev/null 2>&1
-		if [[ $bbversion == *"BusyBox"*"Magisk"*"multi-call"* ]]; then
+		if [[ $bbversion == *"BusyBox"*"multi-call"* ]]; then
 			TestingBusyBoxVersion "$file"
 			RESULT="$?"
 			if [[ "$RESULT" == "0" ]]; then
@@ -1687,44 +1687,71 @@ patching_ramdisk(){
 	[ ! -z $SHA1 ] && echo "SHA1=$SHA1" >> config
 
 	# Compress to save precious ramdisk space
+	# Support both new-style (magisk) and old-style (magisk64/magisk32) binaries
 
-	if $IS32BITONLY || ! $IS64BITONLY ; then
-		$BASEDIR/magiskboot compress=xz magisk32 magisk32.xz
+	if [ -e magisk ]; then
+		# New Magisk 28+ style: single 'magisk' binary + 'init-ld'
+		echo "[!] New-style Magisk binary detected (magisk)"
+		$BASEDIR/magiskboot compress=xz magisk magisk.xz
+		[ -e init-ld ] && $BASEDIR/magiskboot compress=xz init-ld init-ld.xz || true
+		if $STUBAPK; then
+			echo "[!] stub.apk is present, compress and add it to ramdisk"
+			$BASEDIR/magiskboot compress=xz stub.apk stub.xz
+		fi
+		$STUBAPK && SKIPSTUB="" || SKIPSTUB="#"
+
+		apply_ramdisk_hacks
+
+		echo "[!] patching the ramdisk with Magisk Init"
+		$BASEDIR/magiskboot cpio ramdisk.cpio \
+		"add 0750 init magiskinit" \
+		"mkdir 0750 overlay.d" \
+		"mkdir 0750 overlay.d/sbin" \
+		"add 0644 overlay.d/sbin/magisk.xz magisk.xz" \
+		"$SKIPSTUB add 0644 overlay.d/sbin/stub.xz stub.xz" \
+		$([ -e init-ld.xz ] && echo '"add 0644 overlay.d/sbin/init-ld.xz init-ld.xz"') \
+		"patch" \
+		"backup ramdisk.cpio.orig" \
+		"mkdir 000 .backup" \
+		"add 000 .backup/.magisk config"
+	else
+		# Old Magisk style: magisk64/magisk32 binaries
+		if $IS32BITONLY || ! $IS64BITONLY ; then
+			$BASEDIR/magiskboot compress=xz magisk32 magisk32.xz
+		fi
+
+		if $IS64BITONLY || ! $IS32BITONLY ; then
+			$BASEDIR/magiskboot compress=xz magisk64 magisk64.xz
+		fi
+
+		$IS64BITONLY && SKIP32="#" || SKIP32=""
+		$IS64BIT && SKIP64="" || SKIP64="#"
+
+		if $STUBAPK; then
+			echo "[!] stub.apk is present, compress and add it to ramdisk"
+			$BASEDIR/magiskboot compress=xz stub.apk stub.xz
+		fi
+
+		$STUBAPK && SKIPSTUB="" || SKIPSTUB="#"
+
+		echo "[*] adding overlay.d/sbin folders to ramdisk"
+		$BASEDIR/magiskboot cpio ramdisk.cpio \
+		"mkdir 0750 overlay.d" \
+		"mkdir 0750 overlay.d/sbin"
+
+		apply_ramdisk_hacks
+
+		echo "[!] patching the ramdisk with Magisk Init"
+		$BASEDIR/magiskboot cpio ramdisk.cpio \
+		"add 0750 init magiskinit" \
+		"$SKIP32 add 0644 overlay.d/sbin/magisk32.xz magisk32.xz" \
+		"$SKIP64 add 0644 overlay.d/sbin/magisk64.xz magisk64.xz" \
+		"$SKIPSTUB add 0644 overlay.d/sbin/stub.xz stub.xz" \
+		"patch" \
+		"backup ramdisk.cpio.orig" \
+		"mkdir 000 .backup" \
+		"add 000 .backup/.magisk config"
 	fi
-
-	if $IS64BITONLY || ! $IS32BITONLY ; then
-		$BASEDIR/magiskboot compress=xz magisk64 magisk64.xz
-	fi
-
-	$IS64BITONLY && SKIP32="#" || SKIP32=""
-	$IS64BIT && SKIP64="" || SKIP64="#"
-
-	if $STUBAPK; then
-		echo "[!] stub.apk is present, compress and add it to ramdisk"
-		$BASEDIR/magiskboot compress=xz stub.apk stub.xz
-	fi
-
-	$STUBAPK && SKIPSTUB="" || SKIPSTUB="#"
-
-	# Here gets the ramdisk.img patched with the magisk su files and stuff
-
-	echo "[*] adding overlay.d/sbin folders to ramdisk"
-	$BASEDIR/magiskboot cpio ramdisk.cpio \
-	"mkdir 0750 overlay.d" \
-	"mkdir 0750 overlay.d/sbin"
-
-	apply_ramdisk_hacks
-
-	echo "[!] patching the ramdisk with Magisk Init"
-	$BASEDIR/magiskboot cpio ramdisk.cpio \
-	"add 0750 init magiskinit" \
-	"$SKIP32 add 0644 overlay.d/sbin/magisk32.xz magisk32.xz" \
-	"$SKIP64 add 0644 overlay.d/sbin/magisk64.xz magisk64.xz" \
-	"$SKIPSTUB add 0644 overlay.d/sbin/stub.xz stub.xz" \
-	"patch" \
-	"backup ramdisk.cpio.orig" \
-	"mkdir 000 .backup" \
-	"add 000 .backup/.magisk config"
 }
 
 
@@ -2541,9 +2568,7 @@ InstallMagiskToAVD() {
 	if $INEMULATOR; then
 		detect_ramdisk_compression_method
 		decompress_ramdisk
-		if $FAKEBOOTIMG; then
-			process_fake_boot_img
-		fi
+		process_fake_boot_img
 
 		test_ramdisk_patch_status
 		verify_ramdisk_origin
@@ -2554,6 +2579,7 @@ InstallMagiskToAVD() {
 			if $PATCHEDBOOTIMAGE; then
 				apply_ramdisk_hacks
 			else
+				echo "[!] Ramdisk not detected as patched after boot_patch.sh - falling back to patching_ramdisk()"
 				patching_ramdisk
 			fi
 		fi
@@ -2667,7 +2693,6 @@ FindSystemImages() {
 	for SYSIM in $SYSIM_EX;do
 		if [[ ! "$SYSIM" == "" ]]; then
 			echo "${bold}./rootAVD.sh $SYSIM${normal}"
-			echo "${bold}./rootAVD.sh $SYSIM FAKEBOOTIMG${normal}"
 			echo "${bold}./rootAVD.sh $SYSIM DEBUG PATCHFSTAB GetUSBHPmodZ${normal}"
 			echo "${bold}./rootAVD.sh $SYSIM restore${normal}"
 			echo "${bold}./rootAVD.sh $SYSIM InstallKernelModules${normal}"
@@ -2745,10 +2770,6 @@ echo "					- a custom build Kernel might be necessary"
 echo "	"
 echo "	${bold}GetUSBHPmodZ${normal}			The ${bold}USB HOST Permissions Module Zip${normal} will be downloaded into ${bold}/sdcard/Download${normal}"
 echo "	"
-echo "	${bold}FAKEBOOTIMG${normal}			Creates a ${bold}fake Boot.img${normal} file that can directly be patched from the ${bold}Magisk APP${normal}"
-echo "					- Magisk will be launched to patch the fake Boot.img ${bold}within 60s${normal}"
-echo "					- the fake Boot.img will be placed under ${bold}/sdcard/Download/fakeboot.img${normal}"
-echo "	"
 echo "Extra Commands can be ${bold}combined${normal}, there is no particular order."
 echo "	"
 echo "${bold}Notes: rootAVD will${normal}"
@@ -2775,7 +2796,6 @@ ProcessArguments() {
 	AddRCscripts=false
 	BLUESTACKS=false
 	toggleRamdisk=false
-	FAKEBOOTIMG=false
 
 	# Call rootAVD with SOURCING if you just want to source it
 	# or export SOURCING=true if you are in crosh
@@ -2851,11 +2871,6 @@ ProcessArguments() {
 		toggleRamdisk=true
 	fi
 
-	# Call rootAVD with FAKEBOOTIMG if you want to create a fake boot.img to patch the ramdisk.img via direct install
-	if [[ "$@" == *"FAKEBOOTIMG"* ]]; then
-		FAKEBOOTIMG=true
-	fi
-
 	export DEBUG
 	export PATCHFSTAB
 	export GetUSBHPmodZ
@@ -2870,7 +2885,6 @@ ProcessArguments() {
 	export BLUESTACKS
 	export toggleRamdisk
 	export SOURCING
-	export FAKEBOOTIMG
 }
 
 # Script Entry Point
@@ -2937,7 +2951,6 @@ if ( "$DEBUG" ); then
 	echo "BLUESTACKS: $BLUESTACKS"
 	echo "toggleRamdisk: $toggleRamdisk"
 	echo "SOURCING: $SOURCING"
-	echo "FAKEBOOTIMG: $FAKEBOOTIMG"
 fi
 
 if ( ! "$InstallApps" && ! "$BLUESTACKS"); then

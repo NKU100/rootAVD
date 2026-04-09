@@ -515,10 +515,6 @@ exit /B 0
 	echo.
 	echo 	GetUSBHPmodZ			The USB HOST Permissions Module Zip will be downloaded into /sdcard/Download
 	echo.
-	echo 	FAKEBOOTIMG			Creates a fake Boot.img file that can directly be patched from the Magisk APP
-	echo 					- Magisk will be launched to patch the fake Boot.img within 60s
-	echo 					- the fake Boot.img will be placed under /sdcard/Download/fakeboot.img
-	echo.
 	echo Extra Arguments can be combined, there is no particular order.
 	echo.
 	echo Notes: rootAVD will
@@ -600,7 +596,6 @@ exit /B 0
 
 	for %%i in (%SYSIM_EX%) do (
 		echo rootAVD.bat %%i
-		echo rootAVD.bat %%i FAKEBOOTIMG
 		echo rootAVD.bat %%i DEBUG PATCHFSTAB GetUSBHPmodZ
 		echo rootAVD.bat %%i restore
 		echo rootAVD.bat %%i InstallKernelModules

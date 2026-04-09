@@ -35,7 +35,7 @@ A Script to...
 #### on Linux
 <img src="https://github.com/newbit1/video-files/blob/master/rootAVD_Linux.gif" width="50%" height="50%"/>
 
-#### Fake Boot.img on MacOS
+#### Auto Patching via boot_patch.sh on MacOS
 <img src="https://github.com/newbit1/video-files/blob/master/rootAVD_MacOS_FAKEBOOTIMG.gif" width="50%" height="50%"/>
 
 ### How to Install ADB (Android SDK Platform-Tools)
@@ -100,10 +100,6 @@ Extra Arguments:
 
         GetUSBHPmodZ                    The USB HOST Permissions Module Zip will be downloaded into /sdcard/Download
 
-        FAKEBOOTIMG                     Creates a fake Boot.img file that can directly be patched from the Magisk APP
-                                        - Magisk will be launched to patch the fake Boot.img within 60s
-                                        - the fake Boot.img will be placed under /sdcard/Download/fakeboot.img
-
 Extra Arguments can be combined, there is no particular order.
 
 Notes: rootAVD will
@@ -122,7 +118,6 @@ Command Examples:
 ./rootAVD.sh InstallApps
 
 ./rootAVD.sh system-images/android-33/google_apis_playstore/x86_64/ramdisk.img
-./rootAVD.sh system-images/android-33/google_apis_playstore/x86_64/ramdisk.img FAKEBOOTIMG
 ./rootAVD.sh system-images/android-33/google_apis_playstore/x86_64/ramdisk.img DEBUG PATCHFSTAB GetUSBHPmodZ
 ./rootAVD.sh system-images/android-33/google_apis_playstore/x86_64/ramdisk.img restore
 ./rootAVD.sh system-images/android-33/google_apis_playstore/x86_64/ramdisk.img InstallKernelModules
@@ -140,7 +135,6 @@ Command Examples:
 ./rootAVD.sh InstallApps
 
 ./rootAVD.sh system-images/android-25/google_apis/armeabi-v7a/ramdisk.img
-./rootAVD.sh system-images/android-25/google_apis/armeabi-v7a/ramdisk.img FAKEBOOTIMG
 ./rootAVD.sh system-images/android-25/google_apis/armeabi-v7a/ramdisk.img DEBUG PATCHFSTAB GetUSBHPmodZ
 ./rootAVD.sh system-images/android-25/google_apis/armeabi-v7a/ramdisk.img restore
 ./rootAVD.sh system-images/android-25/google_apis/armeabi-v7a/ramdisk.img InstallKernelModules
@@ -149,7 +143,6 @@ Command Examples:
 ./rootAVD.sh system-images/android-25/google_apis/armeabi-v7a/ramdisk.img AddRCscripts
 
 ./rootAVD.sh system-images/android-25/google_apis/x86_64/ramdisk.img
-./rootAVD.sh system-images/android-25/google_apis/x86_64/ramdisk.img FAKEBOOTIMG
 ./rootAVD.sh system-images/android-25/google_apis/x86_64/ramdisk.img DEBUG PATCHFSTAB GetUSBHPmodZ
 ./rootAVD.sh system-images/android-25/google_apis/x86_64/ramdisk.img restore
 ./rootAVD.sh system-images/android-25/google_apis/x86_64/ramdisk.img InstallKernelModules
@@ -158,7 +151,6 @@ Command Examples:
 ./rootAVD.sh system-images/android-25/google_apis/x86_64/ramdisk.img AddRCscripts
 
 ./rootAVD.sh system-images/android-30/google_apis_playstore/x86/ramdisk.img
-./rootAVD.sh system-images/android-30/google_apis_playstore/x86/ramdisk.img FAKEBOOTIMG
 ./rootAVD.sh system-images/android-30/google_apis_playstore/x86/ramdisk.img DEBUG PATCHFSTAB GetUSBHPmodZ
 ./rootAVD.sh system-images/android-30/google_apis_playstore/x86/ramdisk.img restore
 ./rootAVD.sh system-images/android-30/google_apis_playstore/x86/ramdisk.img InstallKernelModules
@@ -167,7 +159,6 @@ Command Examples:
 ./rootAVD.sh system-images/android-30/google_apis_playstore/x86/ramdisk.img AddRCscripts
 
 ./rootAVD.sh system-images/android-30/android-automotive-playstore/x86_64/ramdisk-qemu.img
-./rootAVD.sh system-images/android-30/android-automotive-playstore/x86_64/ramdisk-qemu.img FAKEBOOTIMG
 ./rootAVD.sh system-images/android-30/android-automotive-playstore/x86_64/ramdisk-qemu.img DEBUG PATCHFSTAB GetUSBHPmodZ
 ./rootAVD.sh system-images/android-30/android-automotive-playstore/x86_64/ramdisk-qemu.img restore
 ./rootAVD.sh system-images/android-30/android-automotive-playstore/x86_64/ramdisk-qemu.img InstallKernelModules
@@ -176,7 +167,6 @@ Command Examples:
 ./rootAVD.sh system-images/android-30/android-automotive-playstore/x86_64/ramdisk-qemu.img AddRCscripts
 
 ./rootAVD.sh system-images/android-30/android-automotive-playstore/x86_64/ramdisk.img
-./rootAVD.sh system-images/android-30/android-automotive-playstore/x86_64/ramdisk.img FAKEBOOTIMG
 ./rootAVD.sh system-images/android-30/android-automotive-playstore/x86_64/ramdisk.img DEBUG PATCHFSTAB GetUSBHPmodZ
 ./rootAVD.sh system-images/android-30/android-automotive-playstore/x86_64/ramdisk.img restore
 ./rootAVD.sh system-images/android-30/android-automotive-playstore/x86_64/ramdisk.img InstallKernelModules
@@ -185,7 +175,6 @@ Command Examples:
 ./rootAVD.sh system-images/android-30/android-automotive-playstore/x86_64/ramdisk.img AddRCscripts
 
 ./rootAVD.sh system-images/android-29/android-automotive-playstore/x86/ramdisk.img
-./rootAVD.sh system-images/android-29/android-automotive-playstore/x86/ramdisk.img FAKEBOOTIMG
 ./rootAVD.sh system-images/android-29/android-automotive-playstore/x86/ramdisk.img DEBUG PATCHFSTAB GetUSBHPmodZ
 ./rootAVD.sh system-images/android-29/android-automotive-playstore/x86/ramdisk.img restore
 ./rootAVD.sh system-images/android-29/android-automotive-playstore/x86/ramdisk.img InstallKernelModules
@@ -203,7 +192,6 @@ rootAVD.bat ListAllAVDs
 rootAVD.bat InstallApps
 
 rootAVD.bat system-images\android-33\google_apis_playstore\x86_64\ramdisk.img
-rootAVD.bat system-images\android-33\google_apis_playstore\x86_64\ramdisk.img FAKEBOOTIMG
 rootAVD.bat system-images\android-33\google_apis_playstore\x86_64\ramdisk.img DEBUG PATCHFSTAB GetUSBHPmodZ
 rootAVD.bat system-images\android-33\google_apis_playstore\x86_64\ramdisk.img restore
 rootAVD.bat system-images\android-33\google_apis_playstore\x86_64\ramdisk.img InstallKernelModules
@@ -216,7 +204,6 @@ rootAVD.bat system-images\android-33\google_apis_playstore\x86_64\ramdisk.img In
 
 ```
 rootAVD.bat system-images\android-33\google_apis_playstore\x86_64\ramdisk.img
-rootAVD.bat system-images\android-33\google_apis_playstore\x86_64\ramdisk.img FAKEBOOTIMG
 rootAVD.bat system-images\android-33\google_apis_playstore\x86_64\ramdisk.img DEBUG PATCHFSTAB GetUSBHPmodZ
 rootAVD.bat system-images\android-33\google_apis_playstore\x86_64\ramdisk.img restore
 rootAVD.bat system-images\android-33\google_apis_playstore\x86_64\ramdisk.img InstallKernelModules
@@ -224,7 +211,6 @@ rootAVD.bat system-images\android-33\google_apis_playstore\x86_64\ramdisk.img In
 rootAVD.bat system-images\android-33\google_apis_playstore\x86_64\ramdisk.img InstallPrebuiltKernelModules GetUSBHPmodZ PATCHFSTAB DEBUG
 
 rootAVD.bat system-images\android-25\google_apis_playstore\x86_64\ramdisk.img
-rootAVD.bat system-images\android-25\google_apis_playstore\x86_64\ramdisk.img FAKEBOOTIMG
 rootAVD.bat system-images\android-25\google_apis_playstore\x86_64\ramdisk.img DEBUG PATCHFSTAB GetUSBHPmodZ
 rootAVD.bat system-images\android-25\google_apis_playstore\x86_64\ramdisk.img restore
 rootAVD.bat system-images\android-25\google_apis_playstore\x86_64\ramdisk.img InstallKernelModules
@@ -232,7 +218,6 @@ rootAVD.bat system-images\android-25\google_apis_playstore\x86_64\ramdisk.img In
 rootAVD.bat system-images\android-25\google_apis_playstore\x86_64\ramdisk.img InstallPrebuiltKernelModules GetUSBHPmodZ PATCHFSTAB DEBUG
 
 rootAVD.bat system-images\android-25\google_apis_playstore\armeabi-v7a\ramdisk.img
-rootAVD.bat system-images\android-25\google_apis_playstore\armeabi-v7a\ramdisk.img FAKEBOOTIMG
 rootAVD.bat system-images\android-25\google_apis_playstore\armeabi-v7a\ramdisk.img DEBUG PATCHFSTAB GetUSBHPmodZ
 rootAVD.bat system-images\android-25\google_apis_playstore\armeabi-v7a\ramdisk.img restore
 rootAVD.bat system-images\android-25\google_apis_playstore\armeabi-v7a\ramdisk.img InstallKernelModules
@@ -249,9 +234,9 @@ rootAVD.bat system-images\android-25\google_apis_playstore\armeabi-v7a\ramdisk.i
 * Prebuilt Kernel and Modules will be pulled from [AOSP](https://android.googlesource.com/kernel/prebuilts)
 * Starting Magisk from Terminal via `adb shell monkey -p com.topjohnwu.magisk -c android.intent.category.LAUNCHER 1`
 * API 28 (Pie) is **not supported** at all -> [because](https://source.android.com/devices/bootloader/partitions/system-as-root#sar-partitioning)
-* Magisk Versions >= 26.x can only be proper installed with the FAKEBOOTIMG argument
-	* due to the [New sepolicy.rule Implementation](https://github.com/topjohnwu/Magisk/releases/tag/v26.1)
-* Android 14 needs Magisk Version >= 26.x to be rooted
+* Ramdisk patching now uses Magisk's `boot_patch.sh` automatically (no manual UI interaction needed)
+* Android 14+ needs Magisk Version >= 26.x to be rooted
+* 16KB page size (ps16k) images require Magisk >= 28.0
 
 ### ANDROID_HOME
 * Default location can be overwritten by setting the `ANDROID_HOME` variable
@@ -262,14 +247,12 @@ rootAVD.bat system-images\android-25\google_apis_playstore\armeabi-v7a\ramdisk.i
 * [How-To SU](http://su.chainfire.eu) from [Chainfire's](https://github.com/Chainfire) [libsuperuser](https://github.com/Chainfire/libsuperuser) - Guidelines for problem-free su usage (for Android Developers)
 * [TopJohnWu's libsu](https://github.com/topjohnwu/libsu) - An Android library providing a complete solution for apps using root permissions
 
-### Fake Boot.img Function
-* During runtime, the script will launch the Magisk APK so that you can patch the fake Boot.img within 60s
-* The script also detects if there is already a patched Boot.img present
+### Auto Boot Patching
+* The script now automatically patches the ramdisk using Magisk's `boot_patch.sh` — no manual interaction required
+* A fake boot.img is created internally, patched via `boot_patch.sh`, and the result is unpacked back into the ramdisk
+* If a pre-existing `magisk_patched` file is found in `/sdcard/Download/`, it will be used instead (manual fallback)
 * This feature lets you also update and switch between Magisk Versions
 	* Updating a patched ramdisk will delete the overlay.d folder, all mods are gone!
-* If Magisk can't open a file manager, i.e. on Automotive AVDs,
-	* download and install the famous [X-plore file manager](https://www.lonelycatgames.com/apps/xplore)
-* The script switches to user 0, so that you can see `/sdcard/Download/fakeboot.img`
 
 ### 2 Ways to boot the AVD into Safe Mode
 * 1st Way - If the AVD still boots normal:
@@ -403,7 +386,7 @@ rootAVD.bat system-images\android-25\google_apis_playstore\armeabi-v7a\ramdisk.i
 #### [April 2023]
 * [General] - added link to X-plore file manager
 * [General] - added link to Magisk Single User Mod
-* [General] - added switching to user 0 when running FAKEBOOTIMG
+* [General] - added switching to user 0 when running auto boot patching
 * [rootAVD.bat] - changed return 1 to return 0
 * [rootAVD.sh] - changed return 1 to return 0
 * [rootAVD.sh] - changed copy and move routine
@@ -423,7 +406,7 @@ rootAVD.bat system-images\android-25\google_apis_playstore\armeabi-v7a\ramdisk.i
 * [General] - Added support for already patched ramdisk files
 * [General] - removed the EnvFixTask Argument
 * [General] - Bug fixes
-* [rootAVD.sh] - Added FAKEBOOTIMG Argument that creates a fake Boot.img which can be patched directed from the Magisk APK
+* [rootAVD.sh] - Added FAKEBOOTIMG Argument, now replaced by automatic boot_patch.sh flow
 #### [March 2022]
 * [rootAVD.sh] - Added toggleRamdisk Argument that toggles between patched and stock ramdisk
 * [rootAVD.sh] - Changed the need of a Magisk.zip file
